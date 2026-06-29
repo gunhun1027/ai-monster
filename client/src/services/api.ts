@@ -80,7 +80,7 @@ import type {
   GroupActionResponse,
 } from '../types'
 
-const API_BASE = '/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const TOKEN_KEY = 'monster_quiz_token'
 
 // Cookie 操作工具

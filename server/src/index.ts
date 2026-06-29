@@ -31,9 +31,17 @@ import groupRoutes from './routes/groups'
 const app = express()
 const PORT = process.env.PORT || 3000
 
-// 中间件
+// CORS：支持多域名（开发环境 + 生产环境）
+const ALLOWED_ORIGINS = (process.env.CLIENT_URL || 'http://localhost:5173').split(',').map(s => s.trim())
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // origin 为 undefined 时是服务端对服务端请求，允许通过
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error(`CORS policy: origin ${origin} not allowed`), false)
+    }
+  },
   credentials: true,
 }))
 
@@ -171,13 +179,19 @@ process.on('uncaughtException', (err) => {
   console.error('[UncaughtException]', err)
 })
 
-app.listen(PORT, () => {
-  console.log(`\n🚀 后端服务已启动: http://localhost:${PORT}`)
-  console.log(`📋 健康检查: http://localhost:${PORT}/api/health`)
-  console.log(`🗄️  数据库: PostgreSQL (Neon)\n`)
-  console.log(`🛡️  安全中间件: helmet + 分组限流已启用`)
-  console.log(`   • 认证接口: 20次/15min（仅失败计数）`)
-  console.log(`   • AI 生成: 30次/15min`)
-  console.log(`   • 读接口: 1000次/15min`)
-  console.log(`   • 写接口: 500次/15min\n`)
-})
+// Vercel Serverless 兼容导出
+export default app
+
+// 本地开发时启动 HTTP 服务
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 后端服务已启动: http://localhost:${PORT}`)
+    console.log(`📋 健康检查: http://localhost:${PORT}/api/health`)
+    console.log(`🗄️  数据库: PostgreSQL (Neon)\n`)
+    console.log(`🛡️  安全中间件: helmet + 分组限流已启用`)
+    console.log(`   • 认证接口: 20次/15min（仅失败计数）`)
+    console.log(`   • AI 生成: 30次/15min`)
+    console.log(`   • 读接口: 1000次/15min`)
+    console.log(`   • 写接口: 500次/15min\n`)
+  })
+}
