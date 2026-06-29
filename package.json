@@ -1,0 +1,20 @@
+{
+  "name": "ai-monster-quiz",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI出题怪兽 - 让学习像打游戏一样上瘾",
+  "workspaces": ["server", "client"],
+  "scripts": {
+    "dev": "concurrently -n \"server,client\" -c \"blue,green\" \"npm run dev --workspace server\" \"npm run dev --workspace client\"",
+    "dev:server": "npm run dev --workspace server",
+    "dev:client": "npm run dev --workspace client",
+    "db:generate": "npm run db:generate --workspace server",
+    "db:push": "npm run db:push --workspace server",
+    "db:seed": "npm run db:seed --workspace server",
+    "db:setup": "npm run db:setup --workspace server",
+    "build": "npm run build --workspace server && npm run build --workspace client"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

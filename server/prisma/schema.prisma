@@ -1,0 +1,502 @@
+// AI出题怪兽 - 数据库模型
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 用户模型
+model User {
+  id            String   @id @default(cuid())
+  username      String   @unique
+  email         String   @unique
+  passwordHash  String
+  role          String   @default("user") // "user" | "admin"
+  avatarUrl     String?
+
+  // 怪兽数据
+  monsterName   String   @default("神秘蛋")
+  monsterStage  String   @default("egg") // egg | slime | dragon | fire | divine
+  monsterLevel  Int      @default(1)
+  monsterExp    Int      @default(0)
+  monsterMaxExp Int      @default(100)
+  monsterMood   String   @default("happy") // happy | sad | tired | excited | angry
+
+  // 怪兽养成属性
+  hunger        Int      @default(80) // 0-100
+  cleanliness   Int      @default(80) // 0-100
+  happiness     Int      @default(80) // 0-100
+  lastFedAt     DateTime?
+  lastPlayedAt  DateTime?
+  lastCleanedAt DateTime?
+  coins         Int      @default(0) // 金币
+
+  // 统计数据
+  streakDays    Int      @default(0)
+  lastQuizDate  DateTime?
+  totalCorrect  Int      @default(0)
+  totalQuiz     Int      @default(0)
+  combo         Int      @default(0)
+  maxCombo      Int      @default(0)
+
+  // 进化分支系统
+  pathType       String   @default("none") // "none" | "brave" | "wise" | "tough"
+  pathPoints     Json     @default("{}") // { brave: 0, wise: 0, tough: 0 }
+  evolutionBranch String?  // 记录当前选择的分支路线
+
+  // 难度自适应系统
+  abilityScore   Float    @default(50.0) // 能力值 0-100
+
+  // 剧情进度
+  storyProgress  Json     @default("{}") // { "chapterId": completedNodeOrder } 记录每块大陆解锁到第几关
+  totalStars     Int      @default(0) // 累计获得星星数
+
+  // 剧情路线（v2 剧情分支系统）
+  storyRoute      String   @default("none") // "none" | "brave" | "cultivation" | "balanced"
+  storyChoices    Json     @default("[]") // 已做过的关键选择 [{ choiceId, choice, timestamp }]
+  wrongStreak     Int      @default(0) // 连续答错次数（用于触发修行之路）
+  // 称号系统
+  title           String   @default("知识新手") // 当前称号
+  unlockedTitles  Json     @default("[]") // 已解锁称号 id 列表
+  // 卡片收集
+  cardCollectionCount Int @default(0)
+
+  // 关系
+  quizRecords    QuizRecord[]
+  achievements   UserAchievement[]
+  dailyRewards   DailyReward[]
+  wrongAnswers   WrongAnswer[]
+  studyPlan      StudyPlan?
+  dailyProgress  DailyProgress[]
+  userItems      UserItem[]
+  npcDialogs     NpcDialog[]
+  npcTasks       NpcTask[]
+  storyChoicesMade UserStoryChoice[]
+  cards          UserCard[]
+  // 学习小组（v3）
+  ownedGroups      StudyGroup[] @relation("GroupOwner")
+  groupMemberships GroupMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@index([streakDays])
+  @@index([totalCorrect])
+  @@index([monsterLevel])
+}
+
+// 学科模型
+model Subject {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  icon        String    @default("📚")
+  isActive    Boolean   @default(true)
+  questions     Question[]
+  wrongAnswers  WrongAnswer[]
+  storyChapter  StoryChapter?
+  npcMentor     NpcMentor?
+  knowledgeCards KnowledgeCard[]
+  createdAt     DateTime  @default(now())
+}
+
+// 题目模型
+model Question {
+  id          String      @id @default(cuid())
+  subjectId   String
+  subject     Subject     @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  content     String // 题目文本
+  options     String // JSON: ["选项A","选项B","选项C","选项D"] 或填空提示
+  answer      String // 选择题：正确答案索引 "0"-"3"；填空题：标准答案（多答案用 | 分隔）
+  difficulty  Int         @default(1) // 1-5
+  isActive    Boolean     @default(true)
+  type        String      @default("choice") // "choice" | "fillblank"
+  explanation String? // 题目解析/知识点讲解
+  tags        String? // 知识点标签JSON，如 ["时态", "被动语态"]
+  isAiGenerated Boolean @default(false) // 是否由AI生成
+  aiSource    String? // AI模型来源，如 "deepseek" | "qwen" | "demo"
+  quizRecords  QuizRecord[]
+  wrongAnswers WrongAnswer[]
+  createdAt    DateTime    @default(now())
+
+  @@index([subjectId])
+  @@index([difficulty])
+  @@index([type])
+  @@index([isAiGenerated])
+}
+
+// 答题记录
+model QuizRecord {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId  String
+  question    Question @relation(fields: [questionId], references: [id])
+  isCorrect   Boolean
+  timeTaken   Int // 秒
+  expGained   Int // 本次获得经验
+  comboAtTime Int // 答题时的连击数
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([questionId])
+  @@index([createdAt])
+}
+
+// 成就
+model Achievement {
+  id          String             @id @default(cuid())
+  name        String             @unique
+  icon        String
+  description String
+  condition   String // 检查条件类型
+  threshold   Int                @default(0) // 阈值
+  users       UserAchievement[]
+  createdAt   DateTime           @default(now()) // 添加createdAt
+}
+
+// 用户成就关联
+model UserAchievement {
+  id            String       @id @default(cuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement  @relation(fields: [achievementId], references: [id])
+  unlockedAt    DateTime     @default(now())
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([achievementId])
+}
+
+// 每日奖励
+model DailyReward {
+  id          String   @id @default(uuid())
+  userId      String
+  date        String   // YYYY-MM-DD 格式
+  claimed     Boolean  @default(false)
+  rewardType  String   // 'coins' | 'exp_boost' | 'food'
+  rewardValue Int      // 金币数量或经验加成百分比
+  dayStreak   Int      // 当前是连续第几天（1-7）
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+}
+
+// 系统配置
+model SystemConfig {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
+
+// 错题本
+model WrongAnswer {
+  id            String   @id @default(uuid())
+  userId        String
+  questionId    String
+  subjectId     String
+  selectedOption Int    // 用户选择的错误答案
+  correctAnswer  Int    // 正确答案
+  content       String  // 题目内容（冗余存储）
+  options       String  // 选项JSON
+  wrongCount    Int      @default(1) // 答错次数
+  lastWrongAt   DateTime @default(now())
+  mastered      Boolean  @default(false) // 是否已掌握
+  createdAt     DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  subject  Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId])
+  @@index([userId, mastered])
+}
+
+// 学习计划
+model StudyPlan {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  dailyGoal       Int      @default(10) // 每日目标答题数
+  dailyTimeGoal   Int      @default(15) // 每日目标学习时长（分钟）
+  reminderTime    String?  // "20:00" 格式
+  reminderEnabled Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// 每日进度记录
+model DailyProgress {
+  id           String   @id @default(uuid())
+  userId       String
+  date         String   // YYYY-MM-DD
+  quizCount    Int      @default(0)
+  correctCount Int      @default(0)
+  studyMinutes Int      @default(0)
+  goalAchieved Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+}
+
+// 道具
+model Item {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  type        String   // 'food' | 'equipment' | 'decoration' | 'consumable'
+  effect      String   // 效果描述，如 "hunger+30"
+  price       Int      // 金币价格
+  icon        String   // emoji 或图标路径
+  unlockedAt  Int?     // 达到多少级解锁，null 表示默认解锁
+  createdAt   DateTime @default(now())
+
+  userItems UserItem[]
+}
+
+// 用户道具
+model UserItem {
+  id        String   @id @default(uuid())
+  userId    String
+  itemId    String
+  quantity  Int      @default(1)
+  equipped  Boolean  @default(false) // 装备类道具是否已装备
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@index([userId])
+}
+
+// ============ 剧情系统 ============
+
+// 故事章节（知识大陆）
+model StoryChapter {
+  id          String   @id @default(cuid())
+  subjectId   String   @unique
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  name        String   // 大陆名称，如"英语单词森林"
+  description String   // 大陆描述
+  icon        String   @default("🌲")
+  themeColor  String   @default("#6366f1")
+  order       Int      @default(0)
+  nodes       StoryNode[]
+  storyChoices StoryChoice[]
+  createdAt   DateTime @default(now())
+}
+
+// 故事节点（知识关卡）
+model StoryNode {
+  id            String   @id @default(cuid())
+  chapterId     String
+  chapter       StoryChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  name          String   // 节点名称
+  description   String   // 节点描述
+  order         Int      @default(0)
+  requiredStars Int      @default(0) // 解锁所需前置星星
+  questionCount Int      @default(5) // 该节点需答题数
+  difficulty    Int      @default(1) // 1-5
+  isBoss        Boolean  @default(false)
+  rewardStars   Int      @default(1)
+  createdAt     DateTime @default(now())
+
+  @@index([chapterId])
+  @@index([order])
+}
+
+// NPC导师
+model NpcMentor {
+  id          String   @id @default(cuid())
+  subjectId   String   @unique
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  name        String
+  avatar      String   // emoji
+  personality String
+  greeting    String
+  dialogs     NpcDialog[]
+  tasks       NpcTask[]
+  createdAt   DateTime @default(now())
+}
+
+// NPC对话记录
+model NpcDialog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mentorId    String
+  mentor      NpcMentor @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  dialogType  String   // 'guide' | 'task' | 'story' | 'encourage' | 'explain'
+  content     String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([mentorId])
+}
+
+// NPC任务
+model NpcTask {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mentorId    String
+  mentor      NpcMentor @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  taskType    String   // 'answer_count' | 'correct_count' | 'chapter_complete' | 'streak'
+  targetValue Int
+  currentValue Int      @default(0)
+  rewardCoins Int      @default(10)
+  rewardExp   Int      @default(20)
+  isCompleted Boolean  @default(false)
+  isClaimed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  expiredAt   DateTime?
+
+  @@index([userId])
+  @@index([isCompleted])
+}
+
+// ============ 剧情分支系统 v2 ============
+
+// 剧情选择点定义
+model StoryChoice {
+  id           String   @id @default(cuid())
+  chapterId    String
+  chapter      StoryChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  nodeId       String?  // 关联的节点（可选，也可在任意节点触发）
+  triggerType  String   // 'streak_correct' | 'streak_wrong' | 'boss_win' | 'boss_lose' | 'first_enter'
+  triggerValue Int      @default(0) // 触发阈值，如连续答对3题
+  title        String   // 选择点标题
+  description  String   // 场景描述
+  options      Json     // [{ id, text, routeEffect: 'brave' | 'cultivation' | 'balanced', nextDialog: string }]
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  userChoices  UserStoryChoice[]
+
+  @@index([chapterId])
+}
+
+// 玩家做过的剧情选择记录
+model UserStoryChoice {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  choiceId      String
+  choice         StoryChoice @relation(fields: [choiceId], references: [id], onDelete: Cascade)
+  selectedOption String   // 选择的选项ID
+  routeEffect    String   // "brave" | "cultivation" | "balanced"
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, choiceId])
+  @@index([userId])
+}
+
+// ============ 知识卡片收集系统 v2 ============
+
+// 知识卡片定义
+model KnowledgeCard {
+  id          String   @id @default(cuid())
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  name        String   // 卡片名称，如"一般现在时"
+  content     String   // 卡片内容/知识点
+  funFact     String?  // 趣味冷知识
+  rarity      String   @default("common") // "common" | "rare" | "epic" | "legendary"
+  icon        String   @default("📇") // 卡片图标
+  themeColor  String   @default("#6366f1")
+  dropRate    Float    @default(0.3) // 基础掉落概率 0-1
+  condition   String?  // 特殊掉落条件，如"boss_defeat"
+  createdAt   DateTime @default(now())
+
+  userCards   UserCard[]
+
+  @@index([subjectId])
+  @@index([rarity])
+}
+
+// 玩家拥有的卡片
+model UserCard {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardId      String
+  card        KnowledgeCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  count       Int      @default(1) // 拥有数量（可重复获得）
+  isNew       Boolean  @default(true) // 是否为首次获得（用于显示 NEW! 标签）
+  obtainedAt  DateTime @default(now())
+
+  @@unique([userId, cardId])
+  @@index([userId])
+}
+
+// ============ 学习小组系统 v3 ============
+
+// 学习小组
+model StudyGroup {
+  id          String   @id @default(cuid())
+  name        String   // 小组名称
+  description String?  // 小组描述
+  avatar      String   @default("🛡️") // 小组头像 emoji
+  ownerId     String   // 创建者ID
+  owner       User     @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  maxMembers  Int      @default(20)
+  createdAt   DateTime @default(now())
+
+  members     GroupMember[]
+  goals       GroupGoal[]
+
+  @@index([ownerId])
+}
+
+// 小组成员
+model GroupMember {
+  id                 String   @id @default(cuid())
+  groupId            String
+  group              StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role               String   @default("member") // "owner" | "admin" | "member"
+  joinedAt           DateTime @default(now())
+  weeklyQuizCount    Int      @default(0) // 本周答题数
+  weeklyCorrectCount Int      @default(0) // 本周正确数
+  weekStart          DateTime @default(now()) // 当前周起始时间，用于自动重置
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+}
+
+// 小组目标
+model GroupGoal {
+  id           String    @id @default(cuid())
+  groupId      String
+  group        StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  title        String
+  description  String
+  targetType   String    // 'total_quiz' | 'total_correct' | 'streak_days'
+  targetValue  Int
+  currentValue Int       @default(0)
+  rewardCoins  Int       @default(50)
+  isCompleted  Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  deadline     DateTime?
+
+  @@index([groupId])
+}
+

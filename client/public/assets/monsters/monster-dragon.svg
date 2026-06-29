@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" width="200" height="240">
+  <defs>
+    <radialGradient id="dragonGlow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#93c5fd" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- 光晕 -->
+  <ellipse cx="100" cy="120" rx="90" ry="100" fill="url(#dragonGlow)" opacity="0.5"/>
+  <!-- 尾巴 -->
+  <path d="M50 140 Q30 130 40 100 Q45 85 35 80" fill="none" stroke="#2563eb" stroke-width="4" stroke-linecap="round"/>
+  <path d="M35 80 L28 72 L40 75" fill="#2563eb"/>
+  <!-- 身体 -->
+  <ellipse cx="100" cy="130" rx="55" ry="50" fill="#60a5fa" stroke="#2563eb" stroke-width="3"/>
+  <!-- 翅膀 -->
+  <path d="M55 90 Q20 60 30 110 Q40 100 55 90" fill="#93c5fd" stroke="#2563eb" stroke-width="2"/>
+  <path d="M145 90 Q180 60 170 110 Q160 100 145 90" fill="#93c5fd" stroke="#2563eb" stroke-width="2"/>
+  <!-- 头 -->
+  <ellipse cx="100" cy="95" rx="35" ry="30" fill="#60a5fa" stroke="#2563eb" stroke-width="3"/>
+  <!-- 角 -->
+  <path d="M78 70 L70 45 L85 68" fill="#2563eb"/>
+  <path d="M122 70 L130 45 L115 68" fill="#2563eb"/>
+  <!-- 眼睛 -->
+  <ellipse cx="90" cy="92" rx="8" ry="10" fill="#ffffff"/>
+  <circle cx="90" cy="92" r="4" fill="#1e3a5f"/>
+  <ellipse cx="110" cy="92" rx="8" ry="10" fill="#ffffff"/>
+  <circle cx="110" cy="92" r="4" fill="#1e3a5f"/>
+  <!-- 鼻孔 -->
+  <ellipse cx="95" cy="108" rx="3" ry="2" fill="#1e3a5f"/>
+  <ellipse cx="105" cy="108" rx="3" ry="2" fill="#1e3a5f"/>
+  <!-- 火焰 -->
+  <path d="M95 120 Q100 145 105 120" fill="#fbbf24" opacity="0.8"/>
+  <path d="M98 120 Q100 140 102 120" fill="#f59e0b"/>
+  <!-- 底部阴影 -->
+  <ellipse cx="100" cy="180" rx="50" ry="8" fill="#0a0e1a" opacity="0.3"/>
+</svg>

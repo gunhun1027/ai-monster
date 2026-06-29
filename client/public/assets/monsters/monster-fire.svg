@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" width="200" height="240">
+  <defs>
+    <radialGradient id="fireGlow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#fca5a5" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bodyGradient" cx="40%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="50%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#dc2626"/>
+    </radialGradient>
+  </defs>
+  <!-- 火焰光晕 -->
+  <ellipse cx="100" cy="120" rx="95" ry="105" fill="url(#fireGlow)" opacity="0.6"/>
+  <!-- 翅膀火焰 -->
+  <path d="M40 90 Q5 50 20 130 Q30 110 40 90" fill="#f97316" opacity="0.9"/>
+  <path d="M160 90 Q195 50 180 130 Q170 110 160 90" fill="#f97316" opacity="0.9"/>
+  <!-- 身体 -->
+  <ellipse cx="100" cy="125" rx="60" ry="55" fill="url(#bodyGradient)" stroke="#b91c1c" stroke-width="3"/>
+  <!-- 头部 -->
+  <ellipse cx="100" cy="85" rx="40" ry="35" fill="url(#bodyGradient)" stroke="#b91c1c" stroke-width="3"/>
+  <!-- 火焰鬃毛 -->
+  <path d="M60 55 Q70 20 80 50 Q90 15 100 50 Q110 15 120 50 Q130 20 140 55" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/>
+  <path d="M70 60 Q75 35 85 55 Q95 30 100 55 Q105 30 115 55 Q125 35 130 60" fill="none" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+  <!-- 角 -->
+  <path d="M72 60 L65 30 L80 58" fill="#7f1d1d"/>
+  <path d="M128 60 L135 30 L120 58" fill="#7f1d1d"/>
+  <!-- 眼睛 -->
+  <ellipse cx="88" cy="82" rx="9" ry="11" fill="#ffffff"/>
+  <circle cx="88" cy="82" r="5" fill="#7f1d1d"/>
+  <ellipse cx="112" cy="82" rx="9" ry="11" fill="#ffffff"/>
+  <circle cx="112" cy="82" r="5" fill="#7f1d1d"/>
+  <!-- 火焰吐息 -->
+  <path d="M82 100 Q75 140 90 155 Q105 140 100 100" fill="#ef4444" opacity="0.9"/>
+  <path d="M87 100 Q82 135 95 148 Q108 135 105 100" fill="#f97316" opacity="0.9"/>
+  <path d="M92 100 Q88 125 95 135 Q102 125 100 100" fill="#fbbf24"/>
+  <!-- 底部火焰 -->
+  <ellipse cx="70" cy="175" rx="8" ry="12" fill="#f97316" opacity="0.8"/>
+  <ellipse cx="130" cy="175" rx="8" ry="12" fill="#f97316" opacity="0.8"/>
+  <!-- 阴影 -->
+  <ellipse cx="100" cy="188" rx="55" ry="10" fill="#0a0e1a" opacity="0.3"/>
+</svg>
