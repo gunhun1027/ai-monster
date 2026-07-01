@@ -31,6 +31,9 @@ import groupRoutes from './routes/groups'
 const app = express()
 const PORT = process.env.PORT || 3000
 
+// Vercel 反向代理：信任代理头（限流正确识别用户IP必需）
+app.set('trust proxy', 1)
+
 // CORS：支持多域名（开发环境 + 生产环境）
 const ALLOWED_ORIGINS = (process.env.CLIENT_URL || 'http://localhost:5173').split(',').map(s => s.trim())
 app.use(cors({
